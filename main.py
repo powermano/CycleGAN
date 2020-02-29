@@ -13,13 +13,17 @@ import sys
 from layers import *
 from model import *
 
+
+
+os.environ["CUDA_VISIBLE_DEVICES"]= '0'
+
 img_height = 256
 img_width = 256
 img_layer = 3
 img_size = img_height * img_width
 
-to_train = True
-to_test = False
+to_train = False
+to_test = True
 to_restore = False
 output_path = "./output"
 check_dir = "./output/checkpoints/"
@@ -53,9 +57,9 @@ class CycleGAN():
         self.image_A/self.image_B -> Input image with each values ranging from [-1,1]
         '''
 
-        filenames_A = tf.train.match_filenames_once("./input/horse2zebra/trainA/*.jpg")    
+        filenames_A = tf.train.match_filenames_once("./input/test/trainA/*.jpg")    
         self.queue_length_A = tf.size(filenames_A)
-        filenames_B = tf.train.match_filenames_once("./input/horse2zebra/trainB/*.jpg")    
+        filenames_B = tf.train.match_filenames_once("./input/test/trainB/*.jpg")    
         self.queue_length_B = tf.size(filenames_B)
         
         filename_queue_A = tf.train.string_input_producer(filenames_A)
@@ -96,12 +100,12 @@ class CycleGAN():
 
         for i in range(max_images): 
             image_tensor = sess.run(self.image_A)
-            if(image_tensor.size() == img_size*batch_size*img_layer):
+            if(image_tensor.size == img_size*batch_size*img_layer):
                 self.A_input[i] = image_tensor.reshape((batch_size,img_height, img_width, img_layer))
 
         for i in range(max_images):
             image_tensor = sess.run(self.image_B)
-            if(image_tensor.size() == img_size*batch_size*img_layer):
+            if(image_tensor.size == img_size*batch_size*img_layer):
                 self.B_input[i] = image_tensor.reshape((batch_size,img_height, img_width, img_layer))
 
 
@@ -244,7 +248,7 @@ class CycleGAN():
         self.loss_calc()
       
         # Initializing the global variables
-        init = tf.global_variables_initializer()
+        init = [tf.global_variables_initializer(), tf.local_variables_initializer()]
         saver = tf.train.Saver()     
 
         with tf.Session() as sess:
@@ -264,7 +268,7 @@ class CycleGAN():
                 os.makedirs(check_dir)
 
             # Training Loop
-            for epoch in range(sess.run(self.global_step),100):                
+            for epoch in range(sess.run(self.global_step),200):                
                 print ("In the epoch ", epoch)
                 saver.save(sess,os.path.join(check_dir,"cyclegan"),global_step=epoch)
 
@@ -327,7 +331,7 @@ class CycleGAN():
 
         self.model_setup()
         saver = tf.train.Saver()
-        init = tf.global_variables_initializer()
+        init = [tf.global_variables_initializer(), tf.local_variables_initializer()] 
 
         with tf.Session() as sess:
 
